@@ -1,7 +1,9 @@
 import os
+import json
+import time
+import re
 from dotenv import load_dotenv
 from google import genai
-import time
 
 load_dotenv()
 
@@ -9,50 +11,33 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-def classify_email(email_text):
+
+def extract_email(email_text):
 
     prompt = f"""
-    Classify this email into ONE category:
+You are an AI email intelligence system.
 
-    Internship
-    Scholarship
-    Hackathon
-    Fellowship
-    Certificate
-    Promotion
-    Spam
-    Personal
+Extract structured data from this email.
 
-    Email:
-    {email_text}
+Return ONLY valid JSON (no explanation, no markdown).
 
-    Return only the category.
-    """
+Schema:
+{{
+  "category": "Internship | Hackathon | Scholarship | Fellowship | Certificate | Promotion | Spam | Personal",
+  "opportunity_name": "string or null",
+  "deadline": "string or null",
+  "action_required": "string or null"
+}}
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+Rules:
+- If it is security alert, login alert, or ads → category = "Spam"
+- If no opportunity exists → category = "Spam"
+- Keep values short and clean
+- Output must be ONLY JSON
 
-    return response.text.strip()
-
-def analyze_email(email_text):
-
-    prompt = f"""
-    Analyze this email.
-
-    Return ONLY valid JSON.
-
-    {{
-      "category":"",
-      "opportunity_name":"",
-      "deadline":"",
-      "action_required":""
-    }}
-
-    Email:
-    {email_text}
-    """
+EMAIL:
+\"\"\"{email_text}\"\"\"
+"""
 
     for attempt in range(3):
 
@@ -63,19 +48,24 @@ def analyze_email(email_text):
                 contents=prompt
             )
 
-            return response.text
+            text = response.text
+
+            # SAFE JSON extraction
+            match = re.search(r"\{.*\}", text, re.S)
+
+            if match:
+                return json.loads(match.group())
+
+            raise ValueError("No JSON found")
 
         except Exception as e:
 
-            print(f"Attempt {attempt+1} failed")
+            print(f"Attempt {attempt+1} failed: {e}")
+            time.sleep(5 * attempt)
 
-            time.sleep(3)
-
-    return """
-    {
-      "category":"Error",
-      "opportunity_name":"",
-      "deadline":"",
-      "action_required":""
+    return {
+        "category": "Error",
+        "opportunity_name": None,
+        "deadline": None,
+        "action_required": None
     }
-    """

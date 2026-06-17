@@ -6,6 +6,10 @@ from database import (
 from router import route_query
 from parser import parse_response
 
+ALLOWED_TOOLS = {
+    "get_all_opportunities",
+    "get_by_category"
+}
 
 def display_rows(rows):
 
@@ -44,6 +48,10 @@ while True:
 
         tool = route.get("tool")
 
+        if tool not in ALLOWED_TOOLS:
+            print("\nInvalid tool selected by AI. Please try again.")
+            continue
+
         if tool == "get_all_opportunities":
 
             rows = get_all_opportunities()
@@ -53,17 +61,15 @@ while True:
         elif tool == "get_by_category":
 
             category = route.get("category")
-
+            if not category:
+                print("\nCategory not specified.")
+                continue
             rows = get_by_category(category)
 
             display_rows(rows)
 
         else:
-
-            print(
-                "\nI don't know which tool to use."
-            )
-
+             print("\nI couldn't understand your request. Try:")
     except Exception as e:
 
         print(

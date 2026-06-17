@@ -17,9 +17,10 @@ conn.commit()
 
 
 def save_opportunity(data):
-
+    
     try:
-
+        if not data.get("opportunity_name"):
+            return
         cursor.execute("""
         INSERT INTO opportunities
         (
