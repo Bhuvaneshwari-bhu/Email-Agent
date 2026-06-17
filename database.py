@@ -55,4 +55,44 @@ def show_opportunities():
 
     for row in rows:
 
-        print(row)
+        print("\n" + "=" * 40)
+
+        print(f"📌 {row[2]}")
+        print(f"Category: {row[1]}")
+        print(f"Deadline: {row[3]}")
+        print(f"Action: {row[4]}")
+
+        print("=" * 40)
+
+def get_by_category(category):
+
+    cursor.execute(
+        """
+        SELECT * FROM opportunities
+        WHERE category = ?
+        """,
+        (category,)
+    )
+
+    return cursor.fetchall()
+
+
+def get_all_opportunities():
+
+    cursor.execute(
+        "SELECT * FROM opportunities"
+    )
+
+    return cursor.fetchall()
+
+
+def get_categories():
+
+    cursor.execute(
+        """
+        SELECT DISTINCT category
+        FROM opportunities
+        """
+    )
+
+    return cursor.fetchall()
